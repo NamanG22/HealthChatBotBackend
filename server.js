@@ -6,7 +6,13 @@ const { CohereClientV2 } = require("cohere-ai");
 
 dotenv.config();
 const app = express();
-app.use(cors({ origin: "http://localhost:3001", credentials: true }));
+const corsOptions = {
+  origin: "https://health-chat-bot-orcin.vercel.app/", // Replace with your actual Vercel frontend URL
+  credentials: true,
+  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+  allowedHeaders: "Content-Type,Authorization",
+};
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Initialize Cohere API
