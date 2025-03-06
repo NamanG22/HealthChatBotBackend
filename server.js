@@ -3,6 +3,7 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const mongoose = require("mongoose");
 const { CohereClientV2 } = require("cohere-ai");
+const ChatSession = require("./models/ChatSession");
 
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
@@ -81,21 +82,58 @@ app.get("/profile", async (req, res) => {
 });
 // Chatbot API
 app.post("/chat", async (req, res) => {
-  const { message } = req.body;
+  const { message, userId, sessionId } = req.body;
   console.log(message);
   try {
+    let session = await ChatSession.findOne({ _id: sessionId, userId });
+    if (!session) {
+      session = new ChatSession({
+        userId,
+        title: message.slice(0, 30), // Use first message as session title
+        messages: [],
+      });
+    }
+    session.messages.push({ role: "user", content: message });
     const response = await cohere.chat({
       model: "command-r",
-      messages: [{ role: "user", content: message }],
+      messages: session.messages,
     });
-    console.log(response.message.content[0].text);
-    res.json({ reply: response.message.content[0].text });
+    const botReply = response.message.content[0].text;
+    session.messages.push({ role: "bot", content: botReply });
 
+    await session.save();
+
+    res.json({ reply: botReply, sessionId: session._id });
   } catch (error) {
-    console.error("❌ Cohere API Error:", error);
-    res.status(500).json({ error: "Error generating response" });
+    console.error("❌ Chat Error:", error);
+    res.status(500).json({ error: "Error processing chat" });
   }
 });
+
+app.get("/chats/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const chats = await ChatSession.find({ userId }).sort({ createdAt: -1 });
+
+    res.json(chats.map(chat => ({ sessionId: chat._id, title: chat.title })));
+  } catch (error) {
+    console.error("❌ Fetch Chats Error:", error);
+    res.status(500).json({ error: "Error fetching chats" });
+  }
+});
+
+// ✅ API to Load a Specific Chat
+app.get("/chat/:sessionId", async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    const chat = await ChatSession.findById(sessionId);
+
+    res.json(chat ? chat.messages : []);
+  } catch (error) {
+    console.error("❌ Fetch Chat Error:", error);
+    res.status(500).json({ error: "Error fetching chat session" });
+  }
+})
 
 // Server Start
 const PORT = process.env.PORT || 5000;
