@@ -84,12 +84,25 @@ app.post("/chat", async (req, res) => {
   const { message } = req.body;
   console.log(message);
   try {
-    const response = await cohere.chat({
-      model: "command-r",
-      messages: [{ role: "user", content: message }],
-    });
-    console.log(response.message.content[0].text);
-    res.json({ reply: response.message.content[0].text });
+    (async () => {
+      const res = await cohere.chat({
+        model: 'command-r-plus-08-2024',
+        messages: [
+          {
+            role: 'user',
+            content: message,
+          },
+        ],
+      });
+
+  console.log("res", res);
+  console.log(res.message.content[0].text);
+  res.json({ reply: res.message.content[0].text });
+  })();
+    // const response = await cohere.chat({
+    //   model: "command-r",
+    //   messages: [{ role: "user", content: message }],
+    // });
 
   } catch (error) {
     console.error("❌ Cohere API Error:", error);
