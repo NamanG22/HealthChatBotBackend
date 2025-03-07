@@ -3,7 +3,6 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const mongoose = require("mongoose");
 const { CohereClientV2 } = require("cohere-ai");
-const ChatSession = require("./models/ChatSession");
 
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
@@ -82,31 +81,19 @@ app.get("/profile", async (req, res) => {
 });
 // Chatbot API
 app.post("/chat", async (req, res) => {
-  const { message, userId, sessionId } = req.body;
+  const { message } = req.body;
   console.log(message);
   try {
-    let session = await ChatSession.findOne({ _id: sessionId, userId });
-    if (!session) {
-      session = new ChatSession({
-        userId,
-        title: message.slice(0, 30), // Use first message as session title
-        messages: [],
-      });
-    }
-    session.messages.push({ role: "user", content: message });
     const response = await cohere.chat({
       model: "command-r",
-      messages: session.messages,
+      messages: [{ role: "user", content: message }],
     });
-    const botReply = response.message.content[0].text;
-    session.messages.push({ role: "bot", content: botReply });
+    console.log(response.message.content[0].text);
+    res.json({ reply: response.message.content[0].text });
 
-    await session.save();
-
-    res.json({ reply: botReply, sessionId: session._id });
   } catch (error) {
-    console.error("❌ Chat Error:", error);
-    res.status(500).json({ error: "Error processing chat" });
+    console.error("❌ Cohere API Error:", error);
+    res.status(500).json({ error: "Error generating response" });
   }
 });
 
