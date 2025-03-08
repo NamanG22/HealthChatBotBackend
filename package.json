@@ -19,5 +19,8 @@
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.11.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0"
   }
 }

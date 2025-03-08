@@ -1,31 +1,54 @@
 const mongoose = require('mongoose');
 
-const chatSessionSchema = new mongoose.Schema({
-    userId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-        required: true
-    },
-    title: String,
-    messages: [{
-        role: {
-            type: String,
-            enum: ['user', 'bot'],
-            required: true
-        },
-        content: {
-            type: String,
-            required: true
-        },
-        timestamp: {
-            type: Date,
-            default: Date.now
-        }
-    }],
-    lastUpdated: {
-        type: Date,
-        default: Date.now
-    }
-}, { timestamps: true });
+const messageSchema = new mongoose.Schema({
+  role: {
+    type: String,
+    enum: ['user', 'assistant'],
+    required: true
+  },
+  content: {
+    type: String,
+    required: true
+  },
+  timestamp: {
+    type: Date,
+    default: Date.now
+  }
+});
 
-module.exports = mongoose.model('ChatSession', chatSessionSchema);
+const chatSessionSchema = new mongoose.Schema({
+  userEmail: {
+    type: String,
+    required: true
+  },
+  sessionId: {
+    type: String,
+    required: true
+  },
+  messages: [messageSchema],
+  isActive: {
+    type: Boolean,
+    default: true
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now
+  }
+});
+
+// Update the updatedAt timestamp before every save
+chatSessionSchema.pre('save', function(next) {
+  this.updatedAt = new Date();
+  next();
+});
+
+// Compound index to ensure unique combination of userEmail and sessionId
+chatSessionSchema.index({ userEmail: 1, sessionId: 1 }, { unique: true });
+
+const ChatSession = mongoose.models.ChatSession || mongoose.model('ChatSession', chatSessionSchema);
+
+module.exports = ChatSession;

@@ -8,13 +8,16 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("./models/User");
 
+const sessionRouter = require('./routes/chat/session');
+const messageRouter = require('./routes/chat/message');
+
 dotenv.config();
 const app = express();
 const corsOptions = {
-  origin: "*",
+  origin: "http://localhost:3000",
   credentials: true,
   methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-  allowedHeaders: "Content-Type,Authorization",
+  allowedHeaders: "Content-Type,Authorization,Accept"
 };
 app.use(cors(corsOptions));
 app.use(express.json());
@@ -31,6 +34,27 @@ mongoose
   .catch((err) => console.log("❌ MongoDB Connection Error:", err));
 
 const JWT_SECRET = process.env.JWT_SECRET
+
+app.use('/api/chat', sessionRouter);
+app.use('/api/chat', messageRouter);
+
+app.get('/verify-token', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    
+    if (!token) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    // Return the email associated with the token
+    res.json({ email: decoded.email });
+  } catch (error) {
+    console.error('Token verification error:', error);
+    res.status(401).json({ error: 'Invalid token' });
+  }
+}); 
 
 app.post("/register", async (req, res) => {
   const { name, email, password } = req.body;
@@ -61,7 +85,7 @@ app.post("/login", async (req, res) => {
     if (!isMatch) return res.status(400).json({ error: "Invalid credentials" });
 
     const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: "1h" });
-    res.json({ token, userId: user._id, name: user.name });
+    res.json({ token, userId: user._id, name: user.name, email: user.email });
   } catch (err) {
     res.status(500).json({ error: "Internal Server Error" });
   }
@@ -121,7 +145,6 @@ app.get("/chats/:userId", async (req, res) => {
     res.status(500).json({ error: "Error fetching chats" });
   }
 });
-
 // ✅ API to Load a Specific Chat
 app.get("/chat/:sessionId", async (req, res) => {
   try {
