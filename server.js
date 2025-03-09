@@ -14,13 +14,19 @@ const messageRouter = require('./routes/chat/message');
 dotenv.config();
 const app = express();
 const corsOptions = {
-  origin: "https://chat.santesys.in",
+  origin: [
+    "http://localhost:3000",           // Local development
+    "https://chat.santesys.in"         // Production frontend
+  ],
   credentials: true,
-  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-  allowedHeaders: "Content-Type,Authorization,Accept"
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "Accept"],
 };
 app.use(cors(corsOptions));
 app.use(express.json());
+
+// If you're using Express 4.x, you might also need this for preflight requests
+app.options('*', cors(corsOptions));
 
 // Initialize Cohere API
 const cohere = new CohereClientV2({
