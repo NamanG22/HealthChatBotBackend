@@ -14,7 +14,7 @@ const messageRouter = require('./routes/chat/message');
 dotenv.config();
 const app = express();
 const corsOptions = {
-  origin: "http://localhost:3000",
+  origin: "https://chat.santesys.in",
   credentials: true,
   methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
   allowedHeaders: "Content-Type,Authorization,Accept"
