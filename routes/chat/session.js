@@ -41,17 +41,18 @@ router.post('/session', async (req, res) => {
     }
 });
 
-// Get user sessions
+// Get all sessions for a user
 router.get('/session', async (req, res) => {
     try {
         const { userEmail } = req.query;
-        const sessions = await ChatSession.find({ 
-            userEmail, 
-            isActive: true 
-        }).sort({ updatedAt: -1 });
+        
+        const sessions = await ChatSession.find({ userEmail })
+            .sort({ createdAt: -1 })  // Most recent first
+            .exec();
         
         res.status(200).json(sessions);
     } catch (error) {
+        console.error('Error fetching sessions:', error);
         res.status(500).json({ message: 'Error fetching sessions' });
     }
 });
@@ -71,7 +72,6 @@ router.post('/session/end-user-sessions', async (req, res) => {
                 updatedAt: new Date()
             }
         );
-
         res.status(200).json({ 
             message: 'All active sessions ended for user',
             count: result.modifiedCount
@@ -79,6 +79,62 @@ router.post('/session/end-user-sessions', async (req, res) => {
     } catch (error) {
         console.error('Session end error:', error);
         res.status(500).json({ message: 'Error ending sessions' });
+    }
+});
+
+// Create new session and deactivate others
+router.post('/session/new', async (req, res) => {
+    try {
+        const { userEmail } = req.body;
+
+        // First deactivate all existing sessions for this user
+        await ChatSession.updateMany(
+            { 
+                userEmail,
+                isActive: true 
+            },
+            { 
+                isActive: false,
+                updatedAt: new Date()
+            }
+        );
+
+        // Create new session
+        const sessionId = uuidv4();
+        const session = await ChatSession.create({
+            userEmail,
+            sessionId,
+            messages: [],
+            isActive: true,
+            createdAt: new Date(),
+            updatedAt: new Date()
+        });
+
+        res.status(200).json({ 
+            sessionId: session.sessionId,
+            messages: session.messages 
+        });
+    } catch (error) {
+        console.error('New session creation error:', error);
+        res.status(500).json({ message: 'Error creating new session' });
+    }
+});
+
+// Get specific session data
+router.get('/session/:sessionId', async (req, res) => {
+    try {
+        const { sessionId } = req.params;
+        
+        const session = await ChatSession.findOne({ sessionId });
+
+        if (!session) {
+            return res.status(404).json({ message: 'Session not found' });
+        }
+        
+        res.status(200).json(session);
+    } catch (error) {
+        console.error('Error fetching session:', error);
+        res.status(500).json({ message: 'Error fetching session' });
     }
 });
 
