@@ -7,11 +7,44 @@ const { CohereClientV2 } = require("cohere-ai");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("./models/User");
+// const crypto = require('crypto');
+// const axios = require('axios');
 
 const sessionRouter = require('./routes/chat/session');
 const messageRouter = require('./routes/chat/message');
 
 dotenv.config();
+
+// const API_KEY = process.env.MEDIC_API_KEY;    // Replace with your actual ApiMedic API Key
+// const SECRET_KEY = process.env.MEDIC_API_SECRET;  // Replace with your actual ApiMedic Secret Key
+// const API_URL = "https://sandbox-authservice.priaid.ch/login";  // Use "https://authservice.priaid.ch/login" in production
+
+// async function getAuthToken() {
+//     // Generate HMAC-MD5 Hash
+//     const hmac = crypto.createHmac('md5', SECRET_KEY);
+//     hmac.update(API_URL);
+//     const computedHashString = hmac.digest('base64');
+
+//     try {
+//         const { data } = await axios.post(API_URL, {}, {
+//             headers: {
+//                 "Authorization": `Bearer ${API_KEY}:${computedHashString}`,
+//                 "Content-Type": "application/json"
+//             }
+//         });
+
+//         console.log("Token:", data.Token); // Store this token securely for future requests
+//         return data.Token;
+
+//     } catch (error) {
+//         console.error("Error generating token:", error.response?.data || error.message);
+//         throw new Error("Failed to authenticate with ApiMedic");
+//     }
+// }
+
+// // For testing
+// getAuthToken().then(token => console.log("Generated Token:", token));
+
 const app = express();
 const corsOptions = {
   origin: [

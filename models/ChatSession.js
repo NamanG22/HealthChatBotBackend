@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const messageSchema = new mongoose.Schema({
   role: {
     type: String,
-    enum: ['user', 'assistant'],
+    enum: ['user', 'assistant', 'system'],
     required: true
   },
   content: {
